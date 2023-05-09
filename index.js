@@ -4,6 +4,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const currentDate = require("./controller/date");
 //
 const { log } = console;
 
@@ -15,7 +16,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 //? CONNECTION TO DATABASE, DATABASE SCHEMA, DATABASE MODEL
-mongoose.connect(process.env.API_URL);
+mongoose.connect(process.env.LOCAL_API_URL);
 try {
   log("Connected!");
 } catch {
@@ -32,6 +33,17 @@ const userSchema = new mongoose.Schema({
 // Create database Model
 const StrogeDevUsers = mongoose.model("StrogeDevUsers", userSchema);
 //
+
+// Create Thoughts Schmea
+const thoughtSchema = new mongoose.Schema({
+  uid: String,
+  timeStamp: String,
+  thought: String,
+});
+
+// create databse model
+const UserThoght = mongoose.model("UserThought", thoughtSchema);
+
 app.route("/").get((req, res) => {
   res.json({
     msg: "404 Not Found!",
@@ -92,6 +104,41 @@ app.post("/user", (req, res) => {
     }
   });
 });
+
+app.post("/create", (req, res) => {
+  const { id, thought } = req.body;
+
+  const currentdate = currentDate();
+  // create new thought
+  const newThought = new UserThoght({
+    uid: id,
+    timeStamp: currentdate,
+    thought: thought,
+  });
+
+  newThought.save().then(() => {
+    res.json({ msg: "saved" });
+  });
+});
+
+app
+  .route("/thoughts")
+  .post((req, res) => {
+    const { userID } = req.body;
+    UserThoght.find({ uid: userID }).then((foundUser) => {
+      if (foundUser.length === 0) {
+        res.json({ msg: "success", status: "noData" });
+      } else {
+        res.json({ msg: "success", status: "data", userData: foundUser });
+      }
+    });
+  })
+  .delete((req, res) => {
+    const uid = req.body.uid;
+    UserThoght.deleteOne({ _id: uid }).then((data) => {
+      res.json({ msg: "success" });
+    });
+  });
 
 app.get("/*", (req, res) => {
   res.json({
