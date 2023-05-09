@@ -33,24 +33,71 @@ const userSchema = new mongoose.Schema({
 const StrogeDevUsers = mongoose.model("StrogeDevUsers", userSchema);
 //
 app.route("/").get((req, res) => {
-  res.json({ msg: "Strge-Dev Server API" });
+  res.json({
+    msg: "404 Not Found!",
+    Developer: "https://github.com/Timmystroge",
+  });
+});
+
+app.route("/auth/login").post((req, res) => {
+  const { email, password } = req.body;
+  // check if user with login details exist
+  StrogeDevUsers.findOne({ email: email }).then((foundUser) => {
+    if (!foundUser) {
+      res.json({ msg: "userNotExist" });
+    } else {
+      const foundUserPassword = foundUser.password;
+      if (password === foundUserPassword) {
+        res.json({ msg: "success", userID: foundUser._id });
+      } else {
+        res.json({ msg: "passwordNotMatch" });
+      }
+    }
+  });
 });
 
 /*  AUTH/REGISTER */
 app.route("/auth/register").post((req, res) => {
   const { fullname, email, password } = req.body;
-  log(fullname, email, password);
-
-  // create a new user
+  //
+  // if no user exist with this email - create a new user
   const user = new StrogeDevUsers({
     fullname: fullname,
     email: email,
     password: password,
   });
 
-  user.save();
+  // check if user with email address exist
+  StrogeDevUsers.findOne({ email: email }).then((foundUser) => {
+    if (!foundUser) {
+      user.save(); /* Save new user to database */
+      res.json({ msg: "success", userID: user._id });
+    } else {
+      /* if user with email exist send feedback */
+      res.json({ msg: "emailExist" });
+    }
+  });
+});
 
-  res.json({ msg: "Account Created Successfully!" });
+app.post("/user", (req, res) => {
+  const { userID } = req.body;
+  StrogeDevUsers.findOne({ _id: userID }).then((foundUser) => {
+    if (foundUser) {
+      res.json({
+        msg: "success",
+        user: { fullname: foundUser.fullname, email: foundUser.email },
+      });
+    } else {
+      res.json({ msg: "userNotFound" });
+    }
+  });
+});
+
+app.get("/*", (req, res) => {
+  res.json({
+    msg: "Seems you are lost!",
+    Developer: "https://github.com/Timmystroge",
+  });
 });
 
 app.listen(process.env.PORT || 3000, () =>
