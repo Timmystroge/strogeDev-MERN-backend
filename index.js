@@ -29,7 +29,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // app.use(passport.session());
 
 //? CONNECTION TO DATABASE, DATABASE SCHEMA, DATABASE MODEL
-mongoose.connect(process.env.LOCAL_API_URL);
+mongoose.connect(process.env.API_URL);
 try {
   log("Connected!");
 } catch {
